@@ -1,2 +1,2 @@
 # g-zipper
-no one has ever done a gzip library. i will be the first
+you can place it on your abdomen and it turns your nuts into velour
