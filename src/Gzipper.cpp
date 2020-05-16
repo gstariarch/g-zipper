@@ -97,4 +97,11 @@ uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
   return ~crc;
 }
 
+std::string Gzipper::Decompress(std::ifstream& file) {
+  
+  return "";
+}
+
+
+
 

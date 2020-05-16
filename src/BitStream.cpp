@@ -1,0 +1,38 @@
+#include "BitStream.hpp"
+
+BitStream::BitStream(std::istream* input) {
+  this->input = input;
+  cache = 0;
+}
+
+uint64_t BitStream::GetBits(int num_bits) {
+  uint64_t result = 0;
+  for (int i = 0; i < num_bits; i++) {
+    result |= (GetBit() << i);
+  }
+
+  return result;
+}
+
+uint64_t BitStream::GetBitsInverted(int num_bits) {
+  uint64_t result = 0;
+  while (num_bits--) {
+
+    result = (result << 1) | GetBit();
+  }
+
+  return result;
+}
+
+uint8_t BitStream::GetBit() {
+  if (bit_cursor == 64) {
+    bit_cursor -= 64;
+    input->read((char*)&cache, sizeof(uint64_t));
+    // handle EOF
+  }
+
+  uint8_t res = cache & 1;
+  cache >>= 1;
+  bit_cursor++;
+  return res;
+}

@@ -53,5 +53,6 @@
         "set": "cpp",
         "iomanip": "cpp",
         "unordered_set": "cpp"
-    }
+    },
+    "editor.tabSize": 2
 }
