@@ -11,59 +11,39 @@ int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
 
     file_stream.seekg(0, std::ios_base::beg);
 
-    // verify bits
-    unsigned short id;
-    file_stream >> id;
+    int offset;
+    gzip_header header;
 
-    #if DEBUG
-        std::cout << "ID read: " << id << std::endl;
-    #endif
+    file_stream.read((char*)&header, sizeof(gzip_header));
 
-    if (id != ID_VERIFY) {
+    if (header.id != ID_VERIFY) {
         std::cout << "ERROR: expected " << ID_VERIFY << ", got "
-                  << id << std::endl; 
+                  << header.id << std::endl; 
         return -1;
     }
 
-    unsigned char compression_method;
-    // all i can find is deflate so lets go w that
-    file_stream >> compression_method;
-    if (compression_method != 8) {
-        std::cout << "invalid compression method of " << compression_method << std::endl;
+    if (header.compression_method != 8) {
+        std::cout << "invalid compression method of " << header.compression_method << std::endl;
+        return -1;
     }
 
-    // GZIP FLAGS
-    unsigned char flags;
-    file_stream >> flags;
-
-    // CURRENT TIME
-    uint32_t mtime;
-    file_stream >> mtime;
-
-    // DEFLATE FLAGS
-    unsigned char xfl;
-    file_stream >> xfl;
-
-    unsigned char os;
-    file_stream >> os;
-
     // start dealing with flags
-    if (flags & FLAG_EXTRA) {
+    if (header.flags & FLAG_EXTRA) {
       unsigned short extra_len;
       file_stream >> extra_len;
       file_stream.seekg(extra_len + 2, std::ios_base::cur);
+      offset += (extra_len + 2);
     }
 
-    if (flags & FLAG_NAME) {
-      // skip to end of name string
+    if (header.flags & FLAG_NAME) {
       file_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\0');
     }
 
-    if (flags & FLAG_COMMENT) {
+    if (header.flags & FLAG_COMMENT) {
       file_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\0');
     }
 
-    if (flags & FLAG_HCRC) {
+    if (header.flags & FLAG_HCRC) {
       // read from the start of the header to here
       int offset = file_stream.tellg();
       uint16_t crc_expected;
@@ -72,22 +52,24 @@ int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
       file_stream.seekg(0, std::ios_base::beg);
       uint32_t crc = GetCRCHash(file_stream, offset);
 
-      if (crc_expected != crc & 0xFFFF) {
+      if (crc_expected != (crc & 0xFFFF)) {
         // invalid header
         std::cout << "Invalid header crc -- expected " << crc_expected
                   << ", got " << crc << std::endl;
         return -1;
       }
+
+      std::cout << crc_expected << ", " << crc << std::endl;
     }
 
-
-    
-
-    return -1;
+    return file_stream.tellg();
 }
 
 uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
-    // generate table
+
+  // https://tools.ietf.org/html/rfc1952
+  // http://chrisballance.com/wp-content/uploads/2015/10/CRC-Primer.html
+
   uint32_t hashes[256];
   uint32_t crc;
 
@@ -105,12 +87,10 @@ uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
   }
 
   crc = 0xFFFFFFFF;
-  uint32_t crc_test = 0xFFFFFFFF;
   char input;
 
   while (len--) {
     file.get(input);
-
     crc = (crc >> 8) ^ hashes[(crc & 255) ^ input];
   }
 

@@ -12,8 +12,6 @@ class Gzipper {
   /**
    *  Returns the CRC32 hash of the inputted buffer.
    */ 
-  static uint32_t GetCRCHash(std::ifstream& file, int len);
- private:
   /**
    *  Verifies that the file's headers are valid.
    *  Once everything is verified, returns the offset at which
@@ -23,8 +21,10 @@ class Gzipper {
    *  Returns a -1 if the file can be read, but is invalid.
    */ 
   static int VerifyHeaders(std::ifstream& file_stream, int& byte_length);
+  static uint32_t GetCRCHash(std::ifstream& file, int len);
+ private:
 
-  static const short ID_VERIFY = 0x1f8b;
+  static const unsigned short ID_VERIFY = 0x8B1F;
 
   // GZIP FLAGS
   static const unsigned char FLAG_TEXT = 1;
@@ -34,6 +34,15 @@ class Gzipper {
   static const unsigned char FLAG_COMMENT = 16;
 
   static const unsigned int CRC_HASH = 0xEDB88320;
+};
+
+struct gzip_header {
+  unsigned short id;
+  unsigned char compression_method;
+  unsigned char flags;
+  uint32_t mtime;
+  unsigned char xfl;
+  unsigned char os;
 };
 
 #endif  // GZIPPER_H_
