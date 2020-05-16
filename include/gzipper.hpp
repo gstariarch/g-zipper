@@ -12,7 +12,7 @@ class Gzipper {
   /**
    *  Returns the CRC32 hash of the inputted buffer.
    */ 
-  static int GetCRCHash(unsigned char* buffer, int len);
+  static int GetCRCHash(std::ifstream& file, int len);
  private:
   /**
    *  Verifies that the file's headers are valid.
