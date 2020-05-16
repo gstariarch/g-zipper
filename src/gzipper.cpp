@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <limits>
 #include "gzipper.hpp"
 
 int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
@@ -46,12 +47,45 @@ int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
     file_stream >> os;
 
     // start dealing with flags
+    if (flags & FLAG_EXTRA) {
+      unsigned short extra_len;
+      file_stream >> extra_len;
+      file_stream.seekg(extra_len + 2, std::ios_base::cur);
+    }
+
+    if (flags & FLAG_NAME) {
+      // skip to end of name string
+      file_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\0');
+    }
+
+    if (flags & FLAG_COMMENT) {
+      file_stream.ignore(std::numeric_limits<std::streamsize>::max(), '\0');
+    }
+
+    if (flags & FLAG_HCRC) {
+      // read from the start of the header to here
+      int offset = file_stream.tellg();
+      uint16_t crc_expected;
+      file_stream >> crc_expected;
+
+      file_stream.seekg(0, std::ios_base::beg);
+      uint32_t crc = GetCRCHash(file_stream, offset);
+
+      if (crc_expected != crc & 0xFFFF) {
+        // invalid header
+        std::cout << "Invalid header crc -- expected " << crc_expected
+                  << ", got " << crc << std::endl;
+        return -1;
+      }
+    }
+
+
     
 
     return -1;
 }
 
-int Gzipper::GetCRCHash(unsigned char* buffer, int len) {
+uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
     // generate table
   uint32_t hashes[256];
 
@@ -73,9 +107,11 @@ int Gzipper::GetCRCHash(unsigned char* buffer, int len) {
   }
 
   crc = 0xFFFFFFFF;
+  char input;
 
   while (len--) {
-    crc = (crc >> 8) ^ hashes[(crc & 255) ^ *buffer++];
+    file.get(input);
+    crc = (crc >> 8) ^ hashes[(crc & 255) ^ input];
   }
 }
 
