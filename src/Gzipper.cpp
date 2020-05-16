@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include "gzipper.hpp"
+#include <bitset>
+#include "Gzipper.hpp"
 
 int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
     if (!file_stream.is_open()) {
@@ -88,15 +89,12 @@ int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
 uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
     // generate table
   uint32_t hashes[256];
-
   uint32_t crc;
 
-  // reflected table
   for (int i = 0; i < 256; i++) {
     crc = i;
-    for (int j = 0; j < 8; i++) {
+    for (int j = 0; j < 8; j++) {
       if (crc & 1) {
-        // reflected hash
         crc = (crc >> 1) ^ CRC_HASH;
       } else {
         crc >>= 1;
@@ -107,12 +105,16 @@ uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
   }
 
   crc = 0xFFFFFFFF;
+  uint32_t crc_test = 0xFFFFFFFF;
   char input;
 
   while (len--) {
     file.get(input);
+
     crc = (crc >> 8) ^ hashes[(crc & 255) ^ input];
   }
+
+  return ~crc;
 }
 
 

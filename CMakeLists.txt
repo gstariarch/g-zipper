@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(gzipper VERSION 0.1.0)
 
 # flags
-set(COMPILE_TESTS OFF)
+set(COMPILE_TESTS ON)
 
 include(CTest)
 enable_testing()
@@ -30,6 +30,22 @@ if(${COMPILE_TESTS})
     message(FATAL_ERROR "Build step for googletest failed: ${result}")
   endif()
 
+  # Prevent overriding the parent project's compiler/linker
+  # settings on Windows
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+  # Add googletest directly to our build. This defines
+  # the gtest and gtest_main targets.
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+                  ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+                  EXCLUDE_FROM_ALL)
+
+  ## INDIVIDUAL TEST ##
+  set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
+  # CRC Hash test
+  add_executable(VerifyHeader_test ${TEST_DIR}/VerifyHeader.cpp)
+  target_link_libraries(VerifyHeader_test gzipper gtest_main)
 
 endif()
 
