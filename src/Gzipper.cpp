@@ -4,7 +4,46 @@
 
 #include "Gzipper.hpp"
 
-int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {
+int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
+  
+  int offset = VerifyHeaders(file_stream);
+  BitStream stream(&file_stream);
+
+  if (offset < 0) {
+    // error case
+    return -1;
+  }
+
+  // begin reading
+  uint8_t crc_final = 0;
+  uint8_t crc_type = 0;
+  while (!crc_final) {
+    crc_final = stream.GetBit();
+    crc_type = stream.GetBitsInverted(2);
+
+    switch (crc_type) {
+      case 0x00:
+        // uncompressed data
+        HandleUncompressedData(&stream, output);
+        break;
+      case 0x01:
+        // static compressed
+        HandleStaticHuffmanData(&stream, output);
+        break;
+      case 0x10:
+        // dynamic compressed
+        HandleDynamicHuffmanData(&stream, output);
+        break;
+      default:
+        // error case
+        return -1;    
+    }
+  }
+
+  return 0;
+}
+
+int Gzipper::VerifyHeaders(std::ifstream& file_stream) {
     if (!file_stream.is_open()) {
         return -2;
     }
@@ -97,9 +136,16 @@ uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
   return ~crc;
 }
 
-std::string Gzipper::Decompress(std::ifstream& file) {
-  
-  return "";
+int32_t Gzipper::GetNodeLeaf(BitStream* stream, huffman_node* node) {
+  while (node->payload < 0) {
+    int bit = stream->GetBit();
+    node = (bit ? node->one : node->zero);
+    if (node == NULL) {
+      return -1;
+    }
+  }
+
+  return node->payload;
 }
 
 
