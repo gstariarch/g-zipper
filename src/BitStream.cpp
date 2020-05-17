@@ -5,7 +5,7 @@ BitStream::BitStream(std::istream* input) {
   cache = 0;
 }
 
-uint64_t BitStream::GetBits(int num_bits) {
+uint64_t BitStream::GetBitsInverted(int num_bits) {
   uint64_t result = 0;
   for (int i = 0; i < num_bits; i++) {
     result |= (GetBit() << i);
@@ -14,7 +14,7 @@ uint64_t BitStream::GetBits(int num_bits) {
   return result;
 }
 
-uint64_t BitStream::GetBitsInverted(int num_bits) {
+uint64_t BitStream::GetBits(int num_bits) {
   uint64_t result = 0;
   while (num_bits--) {
 
@@ -25,9 +25,9 @@ uint64_t BitStream::GetBitsInverted(int num_bits) {
 }
 
 uint8_t BitStream::GetBit() {
-  if (bit_cursor == 64) {
-    bit_cursor -= 64;
-    input->read((char*)&cache, sizeof(uint64_t));
+  if (bit_cursor == 8) {
+    bit_cursor -= 8;
+    input->read((char*)&cache, sizeof(uint8_t));
     // handle EOF
   }
 

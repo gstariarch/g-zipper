@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
-#include <bitset>
+
 #include "Gzipper.hpp"
 
 int Gzipper::VerifyHeaders(std::ifstream& file_stream, int& byte_length) {

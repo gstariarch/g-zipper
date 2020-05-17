@@ -13,6 +13,8 @@ TEST(VerifyFileHeaders, CheckSampleFile) {
 
   file.seekg(0, std::ios_base::beg);
 
+  std::cout << len << std::endl;
+
   std::cout << std::hex << Gzipper::GetCRCHash(file, len) << std::endl;
   file.close();
 }

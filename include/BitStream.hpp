@@ -12,11 +12,14 @@ class BitStream {
    *  Create a bitstream from file input
    */ 
   BitStream(std::istream* input);
+  /**
+   *  Reads bits in consecutive order.
+   */ 
   uint64_t GetBits(int num_bits);
   uint64_t GetBitsInverted(int num_bits);
   uint8_t GetBit();
  private:
-  uint64_t cache;
+  uint8_t cache;
   uint8_t bit_cursor;
   std::istream* input;
 };
