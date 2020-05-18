@@ -10,8 +10,9 @@ enable_testing()
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library(gzipper ${SRC_DIR}/Gzipper.cpp)
-target_include_directories(gzipper PUBLIC ${INC_DIR})
+add_library(gzipper ${SRC_DIR}/Gzipper.cpp
+                    ${SRC_DIR}/BitStream.cpp)
+target_include_directories(gzipper PRIVATE ${INC_DIR})
 
 if(${COMPILE_TESTS})
   # from gtest docs
@@ -45,7 +46,15 @@ if(${COMPILE_TESTS})
 
   # CRC Hash test
   add_executable(VerifyHeader_test ${TEST_DIR}/VerifyHeader.cpp)
+  target_include_directories(VerifyHeader_test PRIVATE ${INC_DIR})
   target_link_libraries(VerifyHeader_test gzipper gtest_main)
+  add_test(NAME VerifyHeadersTest COMMAND VerifyHeader_test)
+
+  # BitStream test
+  add_executable(BitStream_test ${TEST_DIR}/BitStreamTests.cpp)
+  target_include_directories(BitStream_test PRIVATE ${INC_DIR})
+  target_link_libraries(BitStream_test gzipper gtest_main)
+  add_test(NAME BitStreamTest COMMAND BitStream_test)
 
 endif()
 
