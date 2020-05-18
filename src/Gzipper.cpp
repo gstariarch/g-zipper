@@ -19,25 +19,27 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   uint8_t crc_type = 0;
   while (!crc_final) {
     crc_final = stream.GetBit();
-    crc_type = stream.GetBitsInverted(2);
+    crc_type = stream.GetBitsLSB(2);
 
-    switch (crc_type) {
-      case 0x00:
-        // uncompressed data
-        HandleUncompressedData(&stream, output);
-        break;
-      case 0x01:
-        // static compressed
-        HandleStaticHuffmanData(&stream, output);
-        break;
-      case 0x10:
-        // dynamic compressed
-        HandleDynamicHuffmanData(&stream, output);
-        break;
-      default:
-        // error case
-        return -1;    
-    }
+    // TODO: wait for implementation of these
+
+    // switch (crc_type) {
+    //   case 0x00:
+    //     // uncompressed data
+    //     HandleUncompressedData(&stream, output);
+    //     break;
+    //   case 0x01:
+    //     // static compressed
+    //     HandleStaticHuffmanData(&stream, output);
+    //     break;
+    //   case 0x10:
+    //     // dynamic compressed
+    //     HandleDynamicHuffmanData(&stream, output);
+    //     break;
+    //   default:
+    //     // error case
+    //     return -1;    
+    // }
   }
 
   return 0;

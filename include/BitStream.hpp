@@ -13,10 +13,16 @@ class BitStream {
    */ 
   BitStream(std::istream* input);
   /**
-   *  Reads bits in consecutive order.
+   *  Reads bits in MSB order, interpreting the first bit read as the highest
+   *  and reading sequentially.
    */ 
-  uint64_t GetBits(int num_bits);
-  uint64_t GetBitsInverted(int num_bits);
+  uint64_t GetBitsMSB(int num_bits);
+
+  /**
+   *  Reads bits in LSB order, interpreting the first bit read as the lowest
+   *  and reading sequentially.
+   */ 
+  uint64_t GetBitsLSB(int num_bits);
   uint8_t GetBit();
  private:
   uint8_t cache;

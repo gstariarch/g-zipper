@@ -3,9 +3,10 @@
 BitStream::BitStream(std::istream* input) {
   this->input = input;
   cache = 0;
+  bit_cursor = 8;
 }
 
-uint64_t BitStream::GetBitsInverted(int num_bits) {
+uint64_t BitStream::GetBitsLSB(int num_bits) {
   uint64_t result = 0;
   for (int i = 0; i < num_bits; i++) {
     result |= (GetBit() << i);
@@ -14,7 +15,7 @@ uint64_t BitStream::GetBitsInverted(int num_bits) {
   return result;
 }
 
-uint64_t BitStream::GetBits(int num_bits) {
+uint64_t BitStream::GetBitsMSB(int num_bits) {
   uint64_t result = 0;
   while (num_bits--) {
 
