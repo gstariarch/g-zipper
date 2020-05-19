@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "Gzipper.hpp"
+#include "HuffmanTree.hpp"
 
 int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   
@@ -43,6 +44,121 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   }
 
   return 0;
+}
+
+uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::string& output) {
+  return 1;
+}
+
+uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::string& output) {
+  return 1;
+}
+
+uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& output) {
+  uint16_t literal_count = stream->GetBitsLSB(5) + 257;
+  uint16_t distance_count = stream->GetBitsLSB(5) + 1;
+  uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
+
+  // build huffman tree for codelens
+  // stack vs heap
+
+  // length of huffman encoding for each code length
+  uint8_t code_lens[CODE_LENGTH_COUNT] = {0};
+  // number of lengths with a given bit count
+
+  // read code counts (MSB)
+  for (int i = 0; i < codelen_count; i++) {
+    code_lens[CODE_LENGTH_ORDER[i]] = stream->GetBitsMSB(3);
+  }
+
+
+  HuffmanTree<uint8_t> length_tree(code_lens, CODE_LENGTH_COUNT);
+  // create literals table
+  int literal = 0;
+  uint8_t bit_length;
+  uint8_t* literal_lens = new uint8_t[literal_count];
+
+  uint8_t repeat_count;
+
+  while (literal < literal_count) {
+    // reach a leaf node
+    while (length_tree.Step(stream->GetBit(), &bit_length) != 0);
+    switch (bit_length) {
+      case 16:
+        // repeat last length some number of times (2 bits + 3)
+        repeat_count = 3 + stream->GetBitsMSB(2);
+        while (repeat_count--) {
+          literal_lens[repeat_count + literal] = literal_lens[literal - 1];
+        }
+
+        break;
+      case 17:
+        // record some number of zeroes (3 bits + 3)
+        repeat_count = 3 + stream->GetBitsMSB(3);
+        while (repeat_count--) {
+          literal_lens[literal++] = 0;
+        }
+
+        break;
+      case 18:
+        // record even more zeroes (7 bits + 11)
+        repeat_count = 11 + stream->GetBitsMSB(7);
+        while (repeat_count--) {
+          literal_lens[literal++] = 0;
+        }
+        break;
+      default:
+        // just interpret the number
+        literal_lens[literal++] = bit_length;
+    }
+  }
+
+  HuffmanTree<uint16_t> literal_tree(literal_lens, literal_count);
+  delete[] literal_lens;
+
+  // parse distance tree
+  uint8_t* distance_lens = new uint8_t[literal_count];
+  literal = 0;
+  length_tree.Reset();
+
+  while (literal < distance_count) {
+    while (length_tree.Step(stream->GetBit(), &bit_length) != 0);
+    switch (bit_length) {
+      case 16:
+        repeat_count = 3 + stream->GetBitsMSB(2);
+        while (repeat_count--) {
+          distance_lens[literal++] = distance_lens[literal - 1];
+        }
+        break;
+      case 17:
+        repeat_count = 3 + stream->GetBitsMSB(3);
+        while (repeat_count--) {
+          distance_lens[literal++] = 0;
+        }
+        break;
+      case 18:
+        repeat_count = 11 + stream->GetBitsMSB(7);
+        while (repeat_count--) {
+          distance_lens[literal++] = 0;
+        }
+        break;
+      default:
+        distance_lens[literal++] = bit_length;
+    }
+  }
+
+  HuffmanTree<uint8_t> distance_tree(distance_lens, distance_count);
+  delete[] distance_lens;
+
+  // read the huffman tree
+  // step along the huffman tree until we get to the bottom
+  // if it's a literal: append it
+  // if not: calculate the extra bit count
+  // read the extra bits for length (not compressed)
+  // read the distance bits (compressed in distance_tree)
+  // read the extra bits and add to a static offset
+  // print back out
+  return 1;
 }
 
 int Gzipper::VerifyHeaders(std::ifstream& file_stream) {
@@ -136,18 +252,6 @@ uint32_t Gzipper::GetCRCHash(std::ifstream& file, int len) {
   }
 
   return ~crc;
-}
-
-int32_t Gzipper::GetNodeLeaf(BitStream* stream, huffman_node* node) {
-  while (node->payload < 0) {
-    int bit = stream->GetBit();
-    node = (bit ? node->one : node->zero);
-    if (node == NULL) {
-      return -1;
-    }
-  }
-
-  return node->payload;
 }
 
 
