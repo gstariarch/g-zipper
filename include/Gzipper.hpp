@@ -25,15 +25,6 @@ struct gzip_header {
 };
 
 /**
- *  Single node on our huffman tree.
- */ 
-struct huffman_node {
-  int32_t payload;
-  huffman_node* zero;
-  huffman_node* one;
-};
-
-/**
  *  Decompress the inputted file.
  * 
  *  @param file_stream - the stream we are decompressing. Must already be opened.
@@ -66,10 +57,8 @@ uint32_t GetCRCHash(std::ifstream& file_stream, int len);
  */ 
 int VerifyHeaders(std::ifstream& file_stream);
 
-int32_t GetNodeLeaf(BitStream* stream, huffman_node* node);
-
 /**
- *  The following functions adhere to the following parameters
+ *  The following three functions adhere to the following parameters:
  *  @param stream - the bit stream we are reading from.
  *  @param output - the string we are outputting the result to.
  */ 
@@ -78,7 +67,15 @@ int32_t GetNodeLeaf(BitStream* stream, huffman_node* node);
  *  Handles Gzip blocks where the data is not compressed, outputting contents to the output string.
  */ 
 uint32_t HandleUncompressedData(BitStream* stream, std::string& output);
+
+/**
+ *  Handles Gzip blocks where the data is statically compressed.
+ */ 
 uint32_t HandleStaticHuffmanData(BitStream* stream, std::string& output);
+
+/**
+ *  Handles Gzip blocks where the data is dynamically compressed.
+ */ 
 uint32_t HandleDynamicHuffmanData(BitStream* stream, std::string& output);
 
 static const unsigned short ID_VERIFY = 0x8B1F;
@@ -92,6 +89,13 @@ static const unsigned char FLAG_NAME = 8;
 static const unsigned char FLAG_COMMENT = 16;
 
 static const unsigned int CRC_HASH = 0xEDB88320;
+
+static const uint8_t MAX_CODE_LENGTH = 7;
+static const uint8_t CODE_LENGTH_COUNT = 19;
+static const uint8_t CODE_LENGTH_ORDER[CODE_LENGTH_COUNT] = {16, 17, 18,  0,  8,
+                                                              7,  9,  6, 10,  5, 
+                                                             11,  4, 12,  3, 13, 
+                                                                  2, 14,  1, 15};
 
 };
 
