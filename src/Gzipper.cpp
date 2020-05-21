@@ -60,7 +60,7 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
 
-  // another TODO: separate this tree building into a helper function maybe?
+  // TODO: separate this tree building into a helper function maybe?
 
   // build huffman tree for codelens
   // stack vs heap
@@ -193,7 +193,7 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
 
       // read back from previous
       // uh oh
-      // todo: create a wrapper for this?
+      // TODO: create a wrapper for this?
       //    - allow for quick access to previous elements,
       //      while allowing quick character placement (only chars)
       //      could use a vector i guess
