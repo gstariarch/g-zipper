@@ -60,6 +60,8 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
 
+  // another TODO: separate this tree building into a helper function maybe?
+
   // build huffman tree for codelens
   // stack vs heap
 
@@ -192,10 +194,14 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
       // read back from previous
       // uh oh
       // todo: create a wrapper for this?
+      //    - allow for quick access to previous elements,
+      //      while allowing quick character placement (only chars)
+      //      could use a vector i guess
 
       // the ordering deal:
       // everything that isn't a huffman code (referring to a path down a given tree) is LSB first.
       // huffman codes start with the MSB, meaning the root of the tree. This is why we can go bit by bit as we slink down them
+      // i dont know why i didnt realize that earlier lmao
     }
   } while (literal_output != END_OF_BLOCK);
 
