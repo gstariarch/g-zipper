@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <sstream>
 
 #include "Gzipper.hpp"
 #include "HuffmanTree.hpp"
@@ -46,15 +47,15 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   return 0;
 }
 
-uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::string& output) {
+uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::stringstream& output) {
   return 1;
 }
 
-uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::string& output) {
+uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::stringstream& output) {
   return 1;
 }
 
-uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& output) {
+uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream& output) {
   uint16_t literal_count = stream->GetBitsLSB(5) + 257;
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
@@ -68,33 +69,37 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
 
   // read code counts (MSB)
   for (int i = 0; i < codelen_count; i++) {
-    code_lens[CODE_LENGTH_ORDER[i]] = stream->GetBitsMSB(3);
+    code_lens[CODE_LENGTH_ORDER[i]] = stream->GetBitsLSB(3);
   }
 
 
   HuffmanTree<uint8_t> length_tree(code_lens, CODE_LENGTH_COUNT);
   // create literals table
   int literal = 0;
-  uint8_t bit_length;
+  uint8_t tree_output;
   uint8_t* literal_lens = new uint8_t[literal_count];
 
   uint8_t repeat_count;
+  uint8_t last_literal;
 
   while (literal < literal_count) {
     // reach a leaf node
-    while (length_tree.Step(stream->GetBit(), &bit_length) != 0);
-    switch (bit_length) {
+    while (length_tree.Step(stream->GetBit(), &tree_output) != 0);
+    
+    
+    switch (tree_output) {
       case 16:
         // repeat last length some number of times (2 bits + 3)
-        repeat_count = 3 + stream->GetBitsMSB(2);
+        last_literal = literal_lens[literal - 1];
+        repeat_count = 3 + stream->GetBitsLSB(2);
         while (repeat_count--) {
-          literal_lens[repeat_count + literal] = literal_lens[literal - 1];
+          literal_lens[repeat_count + literal] = last_literal;
         }
 
         break;
       case 17:
         // record some number of zeroes (3 bits + 3)
-        repeat_count = 3 + stream->GetBitsMSB(3);
+        repeat_count = 3 + stream->GetBitsLSB(3);
         while (repeat_count--) {
           literal_lens[literal++] = 0;
         }
@@ -102,14 +107,14 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
         break;
       case 18:
         // record even more zeroes (7 bits + 11)
-        repeat_count = 11 + stream->GetBitsMSB(7);
+        repeat_count = 11 + stream->GetBitsLSB(7);
         while (repeat_count--) {
           literal_lens[literal++] = 0;
         }
         break;
       default:
         // just interpret the number
-        literal_lens[literal++] = bit_length;
+        literal_lens[literal++] = tree_output;
     }
   }
 
@@ -122,28 +127,29 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
   length_tree.Reset();
 
   while (literal < distance_count) {
-    while (length_tree.Step(stream->GetBit(), &bit_length) != 0);
-    switch (bit_length) {
+    while (length_tree.Step(stream->GetBit(), &tree_output) != 0);
+    switch (tree_output) {
       case 16:
-        repeat_count = 3 + stream->GetBitsMSB(2);
+        repeat_count = 3 + stream->GetBitsLSB(2);
+        last_literal = distance_lens[literal - 1];
         while (repeat_count--) {
-          distance_lens[literal++] = distance_lens[literal - 1];
+          distance_lens[literal++] = last_literal;
         }
         break;
       case 17:
-        repeat_count = 3 + stream->GetBitsMSB(3);
+        repeat_count = 3 + stream->GetBitsLSB(3);
         while (repeat_count--) {
           distance_lens[literal++] = 0;
         }
         break;
       case 18:
-        repeat_count = 11 + stream->GetBitsMSB(7);
+        repeat_count = 11 + stream->GetBitsLSB(7);
         while (repeat_count--) {
           distance_lens[literal++] = 0;
         }
         break;
       default:
-        distance_lens[literal++] = bit_length;
+        distance_lens[literal++] = tree_output;
     }
   }
 
@@ -151,6 +157,48 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
   delete[] distance_lens;
 
   // read the huffman tree
+  literal = 0;
+  literal_tree.Reset();
+  distance_tree.Reset();
+
+  uint16_t literal_output;
+
+  do {
+    while (literal_tree.Step(stream->GetBit(), &literal_output) != 0);
+    if (literal_output < END_OF_BLOCK) {
+      // literal
+      output.put(static_cast<char>(literal_output));
+    } else if (literal_output > END_OF_BLOCK) {
+      // get length code
+      uint16_t lookback_length;
+      if (literal_output > 264) {
+        uint8_t bit_count = (literal_output - 261) / 4;
+        lookback_length = stream->GetBitsLSB(bit_count) + LENGTH_CONSTANTS[literal_output - 265];
+      } else {
+        lookback_length = 3 + (literal_output - 257);
+      }
+
+      uint8_t distance_output;
+      uint16_t lookback_distance;
+      while (distance_tree.Step(stream->GetBit(), &distance_output) != 0);
+
+      if (distance_output < 4) {
+        lookback_distance = distance_output + 1;
+      } else {
+        uint8_t bit_count = (distance_output - 2) / 2;
+        lookback_distance = stream->GetBitsLSB(bit_count) + DIST_CONSTANTS[distance_output - 4];
+      }
+
+      // read back from previous
+      // uh oh
+      // todo: create a wrapper for this?
+
+      // the ordering deal:
+      // everything that isn't a huffman code (referring to a path down a given tree) is LSB first.
+      // huffman codes start with the MSB, meaning the root of the tree. This is why we can go bit by bit as we slink down them
+    }
+  } while (literal_output != END_OF_BLOCK);
+
   // step along the huffman tree until we get to the bottom
   // if it's a literal: append it
   // if not: calculate the extra bit count

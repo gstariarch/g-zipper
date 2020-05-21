@@ -66,17 +66,17 @@ int VerifyHeaders(std::ifstream& file_stream);
 /**
  *  Handles Gzip blocks where the data is not compressed, outputting contents to the output string.
  */ 
-uint32_t HandleUncompressedData(BitStream* stream, std::string& output);
+uint32_t HandleUncompressedData(BitStream* stream, std::stringstream& output);
 
 /**
  *  Handles Gzip blocks where the data is statically compressed.
  */ 
-uint32_t HandleStaticHuffmanData(BitStream* stream, std::string& output);
+uint32_t HandleStaticHuffmanData(BitStream* stream, std::stringstream& output);
 
 /**
  *  Handles Gzip blocks where the data is dynamically compressed.
  */ 
-uint32_t HandleDynamicHuffmanData(BitStream* stream, std::string& output);
+uint32_t HandleDynamicHuffmanData(BitStream* stream, std::stringstream& output);
 
 static const unsigned short ID_VERIFY = 0x8B1F;
 
@@ -91,6 +91,7 @@ static const unsigned char FLAG_COMMENT = 16;
 // polynomial for CRC function -- reversed for her pleasure
 static const unsigned int CRC_HASH = 0xEDB88320;
 
+// constants for hclen
 static const uint8_t MAX_CODE_LENGTH = 7;
 static const uint8_t CODE_LENGTH_COUNT = 19;
 static const uint8_t CODE_LENGTH_ORDER[CODE_LENGTH_COUNT] = {16, 17, 18,  0,  8,
@@ -98,6 +99,22 @@ static const uint8_t CODE_LENGTH_ORDER[CODE_LENGTH_COUNT] = {16, 17, 18,  0,  8,
                                                              11,  4, 12,  3, 13, 
                                                                   2, 14,  1, 15};
 
+// decoding constants for lookback length, starting from 264
+static const uint16_t LENGTH_CONSTANTS[20] = {11,  13,  15,  17,  19, 
+                                              23,  27,  31,  35,  43,
+                                              51,  59,  67,  83,  99,
+                                              115, 131, 163, 195, 227};
+
+// decoding constants for lookback distance, starting from code 4
+static const uint16_t DIST_CONSTANTS[26] = {5,     7,    9,     13,    17,
+                                            25,    33,   49,    65,    97,
+                                            129,   193,  257,   385,   513,
+                                            769,   1025, 1537,  2049,  3073,
+                                            4097,  6145, 8193,  12289, 16385,
+                                            24577 };
+
+// Symbol for "end of block"
+static const uint16_t END_OF_BLOCK = 256;
 };
 
 #endif  // GZIPPER_H_

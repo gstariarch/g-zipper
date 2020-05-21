@@ -98,16 +98,10 @@ class HuffmanTree {
   }
 
   /**
-   *  Huffman Tree class should be state driven -- we slink down the tree until we get to a value, and then we return it.
-   *  In this case, we can safely ignore values which return negative.
-   */ 
-
-  /**
    *  Take a step along the huffman tree.
-   *  If we're at a leaf, return a value and jump back to the root.
+   *  If we're at a leaf, return 0, set the output parameter, and jump back to the root.
    *  If we're at a non-leaf, return NON_LEAF.
    *  If we take an invalid step, return INVALID_NODE.
-   *  If we hit a leaf, return 0.
    */ 
   int Step(uint8_t bit, T* output) {
     if (bit & 1) {
