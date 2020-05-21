@@ -56,6 +56,12 @@ if(${COMPILE_TESTS})
   target_link_libraries(BitStream_test gzipper gtest_main)
   add_test(NAME BitStreamTest COMMAND BitStream_test)
 
+  # Huffmantree test
+  add_executable(HuffmanTree_test ${TEST_DIR}/HuffmanTreeTests.cpp)
+  target_include_directories(HuffmanTree_test PRIVATE ${INC_DIR})
+  target_link_libraries(HuffmanTree_test gzipper gtest_main)
+  add_test(NAME HuffmanTreeTest COMMAND HuffmanTree_test)
+
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

@@ -48,12 +48,12 @@ class HuffmanTree {
       next_code[i] = code;
     }
 
-    root_ = new huffman_node();
+    root_ = new huffman_node<T>();
     huffman_node<T>* cur;
     huffman_node<T>* last;
 
     uint8_t length;
-    uint32_t code;
+    code = 0;
     for (int i = 0; i < len; i++) {
       // account for zeroes on bit length
       if (bit_lengths[i] <= 0) {

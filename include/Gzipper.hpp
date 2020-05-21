@@ -88,6 +88,7 @@ static const unsigned char FLAG_EXTRA = 4;
 static const unsigned char FLAG_NAME = 8;
 static const unsigned char FLAG_COMMENT = 16;
 
+// polynomial for CRC function -- reversed for her pleasure
 static const unsigned int CRC_HASH = 0xEDB88320;
 
 static const uint8_t MAX_CODE_LENGTH = 7;
