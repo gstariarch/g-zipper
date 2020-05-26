@@ -61,4 +61,7 @@ TEST(VerifyBitStream, VerifyBitsInv) {
   file_check.read((char*)&check_val, sizeof(uint16_t));
 
   ASSERT_EQ(final_val, check_val);
+
+  file_check.close();
+  file_input.close();
 }

@@ -22,6 +22,11 @@ TEST(VerifyFileHeaders, CheckSampleFile) {
 TEST(VerifyFileHeaders, CheckVerifyHeaders) {
   std::ifstream file;
   file.open("../tests/testfiles/compile_commands.json.gz");
-  int dummy;
   ASSERT_GT(Gzipper::VerifyHeaders(file), 0);
+  file.close();
+
+  file.open("../tests/testfiles/123.txt");
+  ASSERT_LE(Gzipper::VerifyHeaders(file), 0);
+  file.close();
+
 }
