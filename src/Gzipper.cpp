@@ -47,15 +47,15 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   return 0;
 }
 
-uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::stringstream& output) {
+uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::string& output) {
   return 1;
 }
 
-uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::stringstream& output) {
+uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::string& output) {
   return 1;
 }
 
-uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream& output) {
+uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& output) {
   uint16_t literal_count = stream->GetBitsLSB(5) + 257;
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
@@ -169,7 +169,7 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
     while (literal_tree.Step(stream->GetBit(), &literal_output) != 0);
     if (literal_output < END_OF_BLOCK) {
       // literal
-      output.put(static_cast<char>(literal_output));
+      output.push_back(static_cast<char>(literal_output));
     } else if (literal_output > END_OF_BLOCK) {
       // get length code
       uint16_t lookback_length;
@@ -191,12 +191,14 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::stringstream&
         lookback_distance = stream->GetBitsLSB(bit_count) + DIST_CONSTANTS[distance_output - 4];
       }
 
+      // need to define
       // read back from previous
       // uh oh
       // TODO: create a wrapper for this?
       //    - allow for quick access to previous elements,
       //      while allowing quick character placement (only chars)
       //      could use a vector i guess
+      
 
       // the ordering deal:
       // everything that isn't a huffman code (referring to a path down a given tree) is LSB first.

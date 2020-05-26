@@ -66,17 +66,17 @@ int VerifyHeaders(std::ifstream& file_stream);
 /**
  *  Handles Gzip blocks where the data is not compressed, outputting contents to the output string.
  */ 
-uint32_t HandleUncompressedData(BitStream* stream, std::stringstream& output);
+uint32_t HandleUncompressedData(BitStream* stream, std::string& output);
 
 /**
  *  Handles Gzip blocks where the data is statically compressed.
  */ 
-uint32_t HandleStaticHuffmanData(BitStream* stream, std::stringstream& output);
+uint32_t HandleStaticHuffmanData(BitStream* stream, std::string& output);
 
 /**
  *  Handles Gzip blocks where the data is dynamically compressed.
  */ 
-uint32_t HandleDynamicHuffmanData(BitStream* stream, std::stringstream& output);
+uint32_t HandleDynamicHuffmanData(BitStream* stream, std::string& output);
 
 static const unsigned short ID_VERIFY = 0x8B1F;
 
