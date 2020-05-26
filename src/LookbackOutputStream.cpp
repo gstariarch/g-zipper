@@ -32,15 +32,16 @@ void LookbackOutputStream::Lookback(uint16_t length, uint16_t distance) {
 
 // by default just double the size
 void LookbackOutputStream::ExpandBuffer() {
-  char* new_buffer = new char[buffer_capacity_ * 2];
+  char* start_old = start_;
+  start_ = new char[buffer_capacity_ * 2];
   int index = 0;
   while (index < buffer_capacity_) {
-    new_buffer[index++] = *start_++;
+    start_[index] = start_old[index];
+    index++;
   }
 
-  end_ = new_buffer + (end_ - start_);
-  delete[] start_;
-  start_ = new_buffer;
+  end_ = start_ + (end_ - start_old);
+  delete[] start_old;
   buffer_capacity_ *= 2;
 }
 

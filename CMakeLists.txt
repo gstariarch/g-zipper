@@ -11,7 +11,8 @@ set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(gzipper ${SRC_DIR}/Gzipper.cpp
-                    ${SRC_DIR}/BitStream.cpp)
+                    ${SRC_DIR}/BitStream.cpp
+                    ${SRC_DIR}/LookbackOutputStream.cpp)
 target_include_directories(gzipper PRIVATE ${INC_DIR})
 
 if(${COMPILE_TESTS})
@@ -61,6 +62,12 @@ if(${COMPILE_TESTS})
   target_include_directories(HuffmanTree_test PRIVATE ${INC_DIR})
   target_link_libraries(HuffmanTree_test gzipper gtest_main)
   add_test(NAME HuffmanTreeTest COMMAND HuffmanTree_test)
+
+  # outputstream test
+  add_executable(LOS_test ${TEST_DIR}/LOSTests.cpp)
+  target_include_directories(LOS_test PRIVATE ${INC_DIR})
+  target_link_libraries(LOS_test gzipper gtest_main)
+  add_test(NAME LOSTest COMMAND LOS_test)
 
 endif()
 
