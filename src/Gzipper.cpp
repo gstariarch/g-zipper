@@ -11,6 +11,8 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   int offset = VerifyHeaders(file_stream);
   BitStream stream(&file_stream);
 
+  LookbackOutputStream output_stream;
+
   if (offset < 0) {
     // error case
     return -1;
@@ -25,32 +27,93 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
 
     // TODO: wait for implementation of these
 
-    // switch (crc_type) {
-    //   case 0x00:
-    //     // uncompressed data
-    //     HandleUncompressedData(&stream, output);
-    //     break;
-    //   case 0x01:
-    //     // static compressed
-    //     HandleStaticHuffmanData(&stream, output);
-    //     break;
-    //   case 0x10:
-    //     // dynamic compressed
-    //     HandleDynamicHuffmanData(&stream, output);
-    //     break;
-    //   default:
-    //     // error case
-    //     return -1;    
-    // }
+    switch (crc_type) {
+      case 0x00:
+        // uncompressed data
+        stream.SkipToNextByte();
+        HandleUncompressedData(file_stream, &output_stream);
+        break;
+      case 0x01:
+        // static compressed
+        HandleStaticHuffmanData(&stream, &output_stream);
+        break;
+      case 0x10:
+        // dynamic compressed
+        HandleDynamicHuffmanData(&stream, &output_stream);
+        break;
+      default:
+        // error case
+        return -1;    
+    }
   }
 
   return 0;
 }
 
-void Gzipper::HandleUncompressedData(BitStream* stream, LookbackOutputStream* output) {
+void Gzipper::HandleUncompressedData(std::ifstream& file_stream, LookbackOutputStream* output) {
+  // read len
+  // read nlen
+  uint16_t len;
+  uint16_t nlen;
+  file_stream.read((char*)&len, sizeof(uint16_t));
+  file_stream.read((char*)&nlen, sizeof(uint16_t));
+
+  char data;
+  while (len--) {
+    file_stream.read(&data, sizeof(char));
+    output->PutLiteral(data);
+  }
 }
 
 void Gzipper::HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* output) {
+  uint16_t literal_output = END_OF_BLOCK;
+  uint16_t static_input;
+
+  do {
+    static_input = stream->GetBitsMSB(7);
+    if (static_input >= SEVEN_BIT_LOWER_BOUND && static_input <= SEVEN_BIT_UPPER_BOUND) {
+      literal_output = static_input - SEVEN_BIT_OFFSET;
+      // two tests
+    } else {
+      static_input = (static_input << 1) | stream->GetBit();
+
+      if (static_input >= LOWER_EIGHT_BIT_LOWER_BOUND && static_input <= LOWER_EIGHT_BIT_UPPER_BOUND) {
+        literal_output = static_input - LOWER_EIGHT_BIT_LOWER_BOUND + LOWER_EIGHT_BIT_OFFSET;
+
+      } else if (static_input >= UPPER_EIGHT_BIT_LOWER_BOUND && static_input <= UPPER_EIGHT_BIT_UPPER_BOUND) {
+        literal_output = static_input - UPPER_EIGHT_BIT_LOWER_BOUND + UPPER_EIGHT_BIT_OFFSET;
+      } else {
+        static_input = (static_input << 1) | stream->GetBit();
+        if (static_input >= NINE_BIT_LOWER_BOUND && static_input <= NINE_BIT_UPPER_BOUND) {
+          literal_output = static_input - NINE_BIT_LOWER_BOUND + NINE_BIT_OFFSET;
+        } else {
+          // invalid read
+          literal_output = END_OF_BLOCK;
+        }
+      }
+    }
+
+    if (literal_output < END_OF_BLOCK) {
+      output->PutLiteral(literal_output);
+    } else if (literal_output > END_OF_BLOCK) {
+      uint16_t lookback_length;
+      if (literal_output > 264) {
+        uint8_t bit_count = (literal_output - 261) / 4;
+        lookback_length = stream->GetBitsLSB(bit_count) + LENGTH_CONSTANTS[literal_output - 265];
+        uint16_t distance_output = stream->GetBitsLSB(5);
+        uint16_t lookback_distance;
+        if (distance_output < 4) {
+        lookback_distance = distance_output + 1;
+      } else {
+        uint8_t bit_count = (distance_output - 2) / 2;
+        lookback_distance = stream->GetBitsLSB(bit_count) + DIST_CONSTANTS[distance_output - 4];
+      }
+        output->Lookback(lookback_length, lookback_distance);
+      } else {
+        lookback_length = 3 + (literal_output - 257);
+      }
+    }
+  } while (literal_output != END_OF_BLOCK);
 }
 
 void Gzipper::HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* output) {
@@ -166,7 +229,6 @@ void Gzipper::HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* 
   do {
     while (literal_tree.Step(stream->GetBit(), &literal_output) != 0);
 
-    // TODO: everything from here down can be factored out into an assisting function
     if (literal_output < END_OF_BLOCK) {
       // literal
       output->PutLiteral(literal_output);

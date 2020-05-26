@@ -67,7 +67,7 @@ int VerifyHeaders(std::ifstream& file_stream);
 /**
  *  Handles Gzip blocks where the data is not compressed, outputting contents to the output string.
  */ 
-void HandleUncompressedData(BitStream* stream, LookbackOutputStream* output);
+void HandleUncompressedData(std::ifstream& file_stream, LookbackOutputStream* output);
 
 /**
  *  Handles Gzip blocks where the data is statically compressed.
@@ -139,7 +139,6 @@ static const uint16_t UPPER_EIGHT_BIT_OFFSET = 280;
 static const uint16_t NINE_BIT_LOWER_BOUND = 0x190;
 static const uint16_t NINE_BIT_UPPER_BOUND = 0x1FF;
 static const uint16_t NINE_BIT_OFFSET = 144;
-
 };
 
 #endif  // GZIPPER_H_
