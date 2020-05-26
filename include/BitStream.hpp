@@ -24,6 +24,11 @@ class BitStream {
    */ 
   uint64_t GetBitsLSB(int num_bits);
   uint8_t GetBit();
+
+  /**
+   *  For uncompressed data
+   */ 
+  void SkipToNextByte();
  private:
   uint8_t cache;
   uint8_t bit_cursor;

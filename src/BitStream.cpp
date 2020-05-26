@@ -37,3 +37,8 @@ uint8_t BitStream::GetBit() {
   bit_cursor++;
   return res;
 }
+
+void BitStream::SkipToNextByte() {
+  bit_cursor = 8;
+  // dumps the cache on next read
+}
