@@ -5,6 +5,7 @@
 #include <cinttypes>
 
 #include "BitStream.hpp"
+#include "LookbackOutputStream.hpp"
 
 // decompress
 
@@ -66,17 +67,17 @@ int VerifyHeaders(std::ifstream& file_stream);
 /**
  *  Handles Gzip blocks where the data is not compressed, outputting contents to the output string.
  */ 
-uint32_t HandleUncompressedData(BitStream* stream, std::string& output);
+void HandleUncompressedData(BitStream* stream, LookbackOutputStream* output);
 
 /**
  *  Handles Gzip blocks where the data is statically compressed.
  */ 
-uint32_t HandleStaticHuffmanData(BitStream* stream, std::string& output);
+void HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* output);
 
 /**
  *  Handles Gzip blocks where the data is dynamically compressed.
  */ 
-uint32_t HandleDynamicHuffmanData(BitStream* stream, std::string& output);
+void HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* output);
 
 static const unsigned short ID_VERIFY = 0x8B1F;
 
@@ -115,6 +116,30 @@ static const uint16_t DIST_CONSTANTS[26] = {5,     7,    9,     13,    17,
 
 // Symbol for "end of block"
 static const uint16_t END_OF_BLOCK = 256;
+
+
+// huffman codes are MSB first
+// read 7 bits and see if in range
+// then shift and read 8th bit into lsb and see fi in either range
+// then shift last bit and check that one
+// if none then throw some invalid
+// encodings for static huffman blocks
+static const uint16_t SEVEN_BIT_LOWER_BOUND = 0x00;
+static const uint16_t SEVEN_BIT_UPPER_BOUND = 0x17;
+static const uint16_t SEVEN_BIT_OFFSET = 256;
+
+static const uint16_t LOWER_EIGHT_BIT_LOWER_BOUND = 0x30;
+static const uint16_t LOWER_EIGHT_BIT_UPPER_BOUND = 0xBF;
+static const uint16_t LOWER_EIGHT_BIT_OFFSET = 0;
+
+static const uint16_t UPPER_EIGHT_BIT_LOWER_BOUND = 0xC0;
+static const uint16_t UPPER_EIGHT_BIT_UPPER_BOUND = 0xC7;
+static const uint16_t UPPER_EIGHT_BIT_OFFSET = 280;
+
+static const uint16_t NINE_BIT_LOWER_BOUND = 0x190;
+static const uint16_t NINE_BIT_UPPER_BOUND = 0x1FF;
+static const uint16_t NINE_BIT_OFFSET = 144;
+
 };
 
 #endif  // GZIPPER_H_

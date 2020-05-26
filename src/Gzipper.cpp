@@ -47,15 +47,13 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
   return 0;
 }
 
-uint32_t Gzipper::HandleUncompressedData(BitStream* stream, std::string& output) {
-  return 1;
+void Gzipper::HandleUncompressedData(BitStream* stream, LookbackOutputStream* output) {
 }
 
-uint32_t Gzipper::HandleStaticHuffmanData(BitStream* stream, std::string& output) {
-  return 1;
+void Gzipper::HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* output) {
 }
 
-uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& output) {
+void Gzipper::HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* output) {
   uint16_t literal_count = stream->GetBitsLSB(5) + 257;
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
@@ -167,9 +165,11 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
 
   do {
     while (literal_tree.Step(stream->GetBit(), &literal_output) != 0);
+
+    // TODO: everything from here down can be factored out into an assisting function
     if (literal_output < END_OF_BLOCK) {
       // literal
-      output.push_back(static_cast<char>(literal_output));
+      output->PutLiteral(literal_output);
     } else if (literal_output > END_OF_BLOCK) {
       // get length code
       uint16_t lookback_length;
@@ -191,30 +191,9 @@ uint32_t Gzipper::HandleDynamicHuffmanData(BitStream* stream, std::string& outpu
         lookback_distance = stream->GetBitsLSB(bit_count) + DIST_CONSTANTS[distance_output - 4];
       }
 
-      // need to define
-      // read back from previous
-      // uh oh
-      // TODO: create a wrapper for this?
-      //    - allow for quick access to previous elements,
-      //      while allowing quick character placement (only chars)
-      //      could use a vector i guess
-      
-
-      // the ordering deal:
-      // everything that isn't a huffman code (referring to a path down a given tree) is LSB first.
-      // huffman codes start with the MSB, meaning the root of the tree. This is why we can go bit by bit as we slink down them
-      // i dont know why i didnt realize that earlier lmao
+      output->Lookback(lookback_length, lookback_distance);
     }
   } while (literal_output != END_OF_BLOCK);
-
-  // step along the huffman tree until we get to the bottom
-  // if it's a literal: append it
-  // if not: calculate the extra bit count
-  // read the extra bits for length (not compressed)
-  // read the distance bits (compressed in distance_tree)
-  // read the extra bits and add to a static offset
-  // print back out
-  return 1;
 }
 
 int Gzipper::VerifyHeaders(std::ifstream& file_stream) {
