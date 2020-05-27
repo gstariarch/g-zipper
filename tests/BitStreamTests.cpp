@@ -14,8 +14,8 @@ TEST(VerifyBitStream, VerifyBitsInv) {
   // read_bits should leave them in this order (reversed)
   // read bits inverse should flip them (aka: over 8 bits, it would just be the char)
 
-  file_check.open("../tests/testfiles/123.txt");
-  file_input.open("../tests/testfiles/123.txt");
+  file_check.open("123.txt");
+  file_input.open("123.txt");
 
   BitStream stream(&file_input);
 

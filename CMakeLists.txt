@@ -45,6 +45,10 @@ if(${COMPILE_TESTS})
   ## INDIVIDUAL TEST ##
   set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
+  # move test files into build folder
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/124.txt.gz ${CMAKE_CURRENT_BINARY_DIR}/124.txt.gz COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/123.txt ${CMAKE_CURRENT_BINARY_DIR}/123.txt COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/compile_commands.json.gz ${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json.gz COPYONLY)
   # CRC Hash test
   add_executable(VerifyHeader_test ${TEST_DIR}/VerifyHeader.cpp)
   target_include_directories(VerifyHeader_test PRIVATE ${INC_DIR})
