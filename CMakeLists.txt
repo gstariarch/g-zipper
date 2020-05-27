@@ -46,9 +46,12 @@ if(${COMPILE_TESTS})
   set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
   # move test files into build folder
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/124.txt.gz ${CMAKE_CURRENT_BINARY_DIR}/124.txt.gz COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/123.txt.gz ${CMAKE_CURRENT_BINARY_DIR}/123.txt.gz COPYONLY)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/123.txt ${CMAKE_CURRENT_BINARY_DIR}/123.txt COPYONLY)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/compile_commands.json.gz ${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json.gz COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/moby_dick.txt ${CMAKE_CURRENT_BINARY_DIR}/moby_dick.txt COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/moby_dick.txt.gz ${CMAKE_CURRENT_BINARY_DIR}/moby_dick.txt.gz COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/the_dick.txt ${CMAKE_CURRENT_BINARY_DIR}/the_dick.txt COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tests/testfiles/the_dick.txt.gz ${CMAKE_CURRENT_BINARY_DIR}/the_dick.txt.gz COPYONLY)
   # CRC Hash test
   add_executable(VerifyHeader_test ${TEST_DIR}/VerifyHeader.cpp)
   target_include_directories(VerifyHeader_test PRIVATE ${INC_DIR})
@@ -72,6 +75,12 @@ if(${COMPILE_TESTS})
   target_include_directories(LOS_test PRIVATE ${INC_DIR})
   target_link_libraries(LOS_test gzipper gtest_main)
   add_test(NAME LOSTest COMMAND LOS_test)
+
+  # gzipper test
+  add_executable(Gzipper_test ${TEST_DIR}/GzipperTests.cpp)
+  target_include_directories(Gzipper_test PRIVATE ${INC_DIR})
+  target_link_libraries(Gzipper_test gzipper gtest_main)
+  add_test(NAME GzipperTest COMMAND Gzipper_test)
 
 endif()
 
