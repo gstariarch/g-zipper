@@ -3,6 +3,8 @@
 #include <limits>
 #include <sstream>
 
+#include <bitset>
+
 #include "Gzipper.hpp"
 #include "HuffmanTree.hpp"
 
@@ -15,6 +17,7 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
 
   if (offset < 0) {
     // error case
+    std::cout << "bad header" << std::endl;
     return -1;
   }
 
@@ -28,16 +31,16 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
     // TODO: wait for implementation of these
 
     switch (crc_type) {
-      case 0x00:
+      case 0:
         // uncompressed data
         stream.SkipToNextByte();
         HandleUncompressedData(file_stream, &output_stream);
         break;
-      case 0x01:
+      case 1:
         // static compressed
         HandleStaticHuffmanData(&stream, &output_stream);
         break;
-      case 0x10:
+      case 2:
         // dynamic compressed
         HandleDynamicHuffmanData(&stream, &output_stream);
         break;
@@ -46,6 +49,8 @@ int Gzipper::Decompress(std::ifstream& file_stream, std::string& output) {
         return -1;    
     }
   }
+
+  output = output_stream.GetString();
 
   return 0;
 }
@@ -72,7 +77,7 @@ void Gzipper::HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* o
   do {
     static_input = stream->GetBitsMSB(7);
     if (static_input >= SEVEN_BIT_LOWER_BOUND && static_input <= SEVEN_BIT_UPPER_BOUND) {
-      literal_output = static_input - SEVEN_BIT_OFFSET;
+      literal_output = static_input + SEVEN_BIT_OFFSET;
       // two tests
     } else {
       static_input = (static_input << 1) | stream->GetBit();
@@ -101,18 +106,19 @@ void Gzipper::HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* o
       if (literal_output > 264) {
         uint8_t bit_count = (literal_output - 261) / 4;
         lookback_length = stream->GetBitsLSB(bit_count) + LENGTH_CONSTANTS[literal_output - 265];
-        uint16_t distance_output = stream->GetBitsLSB(5);
-        uint16_t lookback_distance;
-        if (distance_output < 4) {
+      } else {
+        lookback_length = 3 + (literal_output - 257);
+      }
+
+      uint16_t distance_output = stream->GetBitsMSB(5);
+      uint16_t lookback_distance;
+      if (distance_output < 4) {
         lookback_distance = distance_output + 1;
       } else {
         uint8_t bit_count = (distance_output - 2) / 2;
         lookback_distance = stream->GetBitsLSB(bit_count) + DIST_CONSTANTS[distance_output - 4];
       }
-        output->Lookback(lookback_length, lookback_distance);
-      } else {
-        lookback_length = 3 + (literal_output - 257);
-      }
+      output->Lookback(lookback_length, lookback_distance);
     }
   } while (literal_output != END_OF_BLOCK);
 }
@@ -143,14 +149,13 @@ void Gzipper::HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* 
     // reach a leaf node
     while (length_tree.Step(stream->GetBit(), &tree_output) != 0);
     
-    
     switch (tree_output) {
       case 16:
         // repeat last length some number of times (2 bits + 3)
         last_literal = literal_lens[literal - 1];
         repeat_count = 3 + stream->GetBitsLSB(2);
         while (repeat_count--) {
-          literal_lens[repeat_count + literal] = last_literal;
+          literal_lens[literal++] = last_literal;
         }
 
         break;
@@ -306,8 +311,6 @@ int Gzipper::VerifyHeaders(std::ifstream& file_stream) {
                   << ", got " << crc << std::endl;
         return -1;
       }
-
-      std::cout << crc_expected << ", " << crc << std::endl;
     }
 
     return file_stream.tellg();
