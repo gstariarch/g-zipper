@@ -97,6 +97,7 @@ void Gzipper::HandleStaticHuffmanData(BitStream* stream, LookbackOutputStream* o
       output->PutLiteral(literal_output);
     } else if (literal_output > END_OF_BLOCK) {
       uint16_t lookback_length;
+      // cannot factor out -- length code is always 5 bits + no tree
       if (literal_output > 264) {
         uint8_t bit_count = (literal_output - 261) / 4;
         lookback_length = stream->GetBitsLSB(bit_count) + LENGTH_CONSTANTS[literal_output - 265];
@@ -121,16 +122,9 @@ void Gzipper::HandleDynamicHuffmanData(BitStream* stream, LookbackOutputStream* 
   uint16_t distance_count = stream->GetBitsLSB(5) + 1;
   uint16_t codelen_count = stream->GetBitsLSB(4) + 4;
 
-  // TODO: separate this tree building into a helper function maybe?
-
-  // build huffman tree for codelens
-  // stack vs heap
-
   // length of huffman encoding for each code length
   uint8_t code_lens[CODE_LENGTH_COUNT] = {0};
   // number of lengths with a given bit count
-
-  // read code counts (MSB)
   for (int i = 0; i < codelen_count; i++) {
     code_lens[CODE_LENGTH_ORDER[i]] = stream->GetBitsLSB(3);
   }
