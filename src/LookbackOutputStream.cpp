@@ -20,11 +20,14 @@ void LookbackOutputStream::Lookback(uint16_t length, uint16_t distance) {
     // lookback is valid
     int buffer_size = (end_ - start_);
     if (buffer_size + length >= buffer_capacity_) {
+      
       ExpandBuffer();
+      // error: when expanding the buffer, the lookback cursor is stuck at the old array instead of the new one
+      lookback_cursor = end_ - distance;
     }
 
     while (length--) {
-      // we do not need to resize
+      // we do not need to resize here
       *end_++ = *lookback_cursor++;
     }
   }
